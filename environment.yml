@@ -1,0 +1,18 @@
+name: swiftmiz
+channels:
+    - defaults
+    - anaconda
+    - conda-forge
+dependencies:
+    - xarray
+    - netCDF4
+    - dask
+    - bottleneck
+    - pandas
+    - pyarrow
+    - scipy
+    - cartopy
+    - tqdm
+    - matplotlib
+    - cmocean
+    - jupyter
