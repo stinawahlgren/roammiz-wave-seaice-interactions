@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from scipy.ndimage import gaussian_filter
+from scipy.io import savemat
 
 def get_xy_limits_of_region(lola_ds, lon_min, lon_max, lat_min, lat_max, lon="Longitudes", lat="Latitudes"):
     """
@@ -93,3 +94,53 @@ def symmetric_wrap(X, Y):
         return x.tolist()
     else:
         return (X+Y/2) % Y - Y/2
+    
+def save_swift_as_mat_file(swift_df, path, variable_name = 'SWIFT'):
+    """
+    Export a SWIFT dataframe to matlab. Compatible with https://github.com/SASlabgroup/SWIFT-codes
+    """
+    # Get the fields of SWIFT matlab struct and substructs
+    (fields, subfields) = _extract_fields(swift_df)
+
+    # Initialize SWIFT structured array
+    fields_all = np.concatenate([fields, list(subfields.keys())])
+    nbr_of_rows = len(swift_df.index)
+    swift_arr = np.empty(nbr_of_rows, dtype=[(x, object) for x in fields_all])
+    
+    # Populate the structured array one row at a time    
+    for i in range(nbr_of_rows):
+        
+        # Simple fields
+        for name in fields:
+            swift_arr[name][i] = swift_df.iloc[i][name]
+        
+        # Fields that are substructs
+        for key in subfields.keys():
+            substruct = np.empty(1, dtype=[(x, object) for x in subfields[key]])
+            for name in subfields[key]:
+                substruct[0][name] = swift_df.iloc[i][f'{key}.{name}']
+            swift_arr[key][i] = substruct
+                                                                                    
+    # Save structured array as matlab struct
+    savemat(path, {variable_name: swift_arr})
+    
+    return
+
+def _extract_fields(swift_df):
+    fields = []
+    subfields = {}
+    for col in swift_df.columns:
+        if '.' in col:
+            # Name convention <substruct>.<field> in pandas dataframe
+            parts = col.split('.')           
+            if len(parts) > 2:
+                raise ValueError(f'Column {col} appears to represent a nested substruct. This is not supported.')
+            else:
+                if parts[0] in subfields.keys():
+                    subfields[parts[0]].append(parts[1])
+                else:
+                    subfields[parts[0]] = [parts[1]]           
+        else:
+            fields.append(col)
+            
+    return (fields, subfields)
