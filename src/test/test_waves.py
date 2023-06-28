@@ -26,7 +26,7 @@ def test__directional_moments2direction():
     # Test direction    
     a1 = np.array([1, -np.sqrt(2), 0])
     b1 = np.array([0, -np.sqrt(2), 1])    
-    dir_expected = np.array([90, -135, 0])   
+    dir_expected = np.array([270, 45, 180])   
     atol=5
     assert np.allclose(waves.directional_moments2direction(a1,b1), dir_expected, atol=atol)
 
@@ -43,7 +43,7 @@ def test__peak_direction():
     a1 = np.array([1, -np.sqrt(2), 0])
     b1 = np.array([0, -np.sqrt(2), 1])    
     energy = np.array([0, 1, 0])
-    dir_expected = -135
+    dir_expected = 45
     atol=5
     assert np.isclose(waves.peak_direction(a1,b1,energy), dir_expected, atol=atol)
     
@@ -60,7 +60,7 @@ def test__mean_direction():
     a1 = np.array([-0.67, -0.7, -0.6])
     b1 = np.array([0.33,0.67,0.4])
     energy = np.array([0.1, 0.5, 0.2])
-    dir_expected = -50.16
+    dir_expected = 129.84
     atol = 2
     assert np.isclose(dir_expected,waves.mean_direction(a1,b1,energy), atol=atol)
     

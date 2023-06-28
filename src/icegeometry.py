@@ -110,8 +110,10 @@ def add_distance_to_edge(swift_df, edge_df, data_limits, in_direction, label,
                 else:
                     wave_dir = in_direction
 
-                # Adjust to polar stereographic bearing (0 deg pointing in positive y-direction)  
+                # Adjust to polar stereographic bearing (0 deg pointing in positive y-direction) 
                 wave_dir_xy = wave_dir + row[lon_col]
+                # Change to meterological convention (direction where waves are coming from)
+                wave_dir_xy = wave_dir_xy + 180
                 if ~np.isnan(wave_dir):
                     (distance, direction_xy) = get_distance_to_edge([row.x, row.y], 
                                                                     edge, 

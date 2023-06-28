@@ -11,7 +11,7 @@ def test__add_distance_to_edge():
     y = [0, 2]
     lon = [0,90]
     edge = [np.array([[-2,0],[2,4]]), np.array([[-2,0],[2,4]])]
-    wave_direction = [270,180];
+    wave_direction = [90,0];
     data_limits = pd.DataFrame({'x_min': -3, 'x_max': 3,
                                 'y_min': -3, 'y_max': 6},
                               index = [0])
