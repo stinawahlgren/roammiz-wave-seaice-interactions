@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, BoundaryNorm, ListedColormap
-from matplotlib.dates import DateFormatter, DayLocator
+from matplotlib.dates import DateFormatter, DayLocator, date2num
+from matplotlib.patches import Rectangle
 import cmocean.cm as cmo
 
 import waves
@@ -250,4 +251,23 @@ def get_common_time_limits(deployments, rows, cols, time="timestamp"):
     for col in tmax:
         tmax_per_column.append(max(col).to_datetime64())
         
-    return (tmin_per_column, tmax_per_column)    
+    return (tmin_per_column, tmax_per_column)  
+
+def mark_time_range(time_range, ax = None):
+    # Based on https://stackoverflow.com/a/31163913/11028793
+    
+    if ax is None:
+        ax = plt.gca()
+    
+    # Rectangle x coordinates
+    start = date2num(time_range[0])
+    end = date2num(time_range[1])
+    width = end - start
+    
+    # Rectangle y coordinates
+    ylim = ax.get_ylim()
+    height = ylim[1] - ylim[0]
+    
+    # Plot rectangle
+    rect = Rectangle((start, ylim[0]), width, height, zorder=-2, color='lavender')
+    ax.add_patch(rect)
