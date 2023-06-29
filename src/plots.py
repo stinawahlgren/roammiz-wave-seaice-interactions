@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, BoundaryNorm, ListedColormap
 from matplotlib.dates import DateFormatter, DayLocator, date2num
 from matplotlib.patches import Rectangle
+from matplotlib.cm import get_cmap
 import cmocean.cm as cmo
 
 import waves
@@ -11,10 +12,10 @@ import waves
 
 def plot_panel(swift, axes, vmin, vmax, y_left_visible = True, 
                y_right_visible = True, wave_height_ylim = None,
-               ):
+               group_ice = True):
     
     plot_sic_and_waveheight(swift, axes[0], ylim = wave_height_ylim, y_right_visible = y_right_visible)
-    plot_ice_code(swift, axes[1])
+    plot_ice_code(swift, axes[1], group_ice = group_ice)
     plot_wave_spectra(swift, axes[2], vmin, vmax)
     
     if not y_left_visible:
@@ -35,8 +36,11 @@ def plot_wave_spectra(swift, ax, vmin, vmax):
     return
 
 
-def plot_ice_code(swift, ax):
-    (cmap,norm) = icetype_cmap()    
+def plot_ice_code(swift, ax, group_ice = True):
+    if group_ice:
+        (cmap,norm) = icegroup_cmap()
+    else:
+        (cmap,norm) = icetype_cmap()         
     ax.pcolor(swift.timestamp, [0,1], np.tile([swift.icetype],(2,1)), 
               cmap = cmap, norm = norm,
               shading = 'nearest')
@@ -78,7 +82,6 @@ def plot_sic_and_waveheight(swift, ax, waveheight_threshold = 0.1 , ylim = None,
     
     return
 
-
 def icetype_cmap(false_colors = False):
     """
     Custom cmap for the swift photo ice type scale
@@ -86,16 +89,22 @@ def icetype_cmap(false_colors = False):
     -9 : No data (night)
     -8 : No data (frozen lens)
     -7 : No data (missing photos)
-    -1 : Lead
-    1-7: Sea ice type (1: open water, 7: tightly packed floes)
-    
+    -1 : Open water patch deep in sea ice
+     1 : Open water
+     2 : Open water with trace ice
+     3 : Small pancakes (< 1 m)
+     4 : Brash
+     5 : Ice cakes/floes with frazil or open water
+     6 : Ice cakes/floes with brash
+     7 : Consolidated ice floes 
+     
     Returns (cmap,norm)
     Example useage : plt.pcolormesh(icetype, cmap=cmap, norm=norm)
     """       
     color_no_data = [0.5, 0.5, 0.5] # grey
     color_lead    = [0.5, 0.0, 0.5] # purple     
     if false_colors:
-        color_ice = matplotlib.cm.get_cmap('gist_rainbow')(np.linspace(0,1,7))[:,0:3]
+        color_ice = get_cmap('gist_rainbow')(np.linspace(0,1,7))[:,0:3]
     else:    
         color_ice = cmo.ice(np.linspace(0.05,0.90,7))[:,0:3]
     colors = np.concatenate([[color_no_data], [color_lead], color_ice]);   
@@ -107,15 +116,70 @@ def icetype_cmap(false_colors = False):
     return (cmap, norm) 
 
 
+def icegroup_cmap(for_plotting = True):
+    """
+    Custom cmap for the grouped version of swift photo ice type scale
+    
+    No data: Ice code -9,-8,-7
+    Open water: 1
+    Brash: 2,3,4
+    Floes: -1,5,6
+    Continuous ice: 7
+    
+    Returns (cmap,norm)
+    Example useage : plt.pcolormesh(icetype, cmap=cmap, norm=norm)
+    """       
+    
+    no_data = [0.5, 0.5, 0.5]
+    water = cmo.ice(0.05)[0:3]
+    brash = cmo.ice(0.33)[0:3]
+    floes = cmo.ice(0.67)[0:3]
+    continuous = cmo.ice(0.9)[0:3]
+    
+    if for_plotting: 
+        cmap = ListedColormap([no_data, floes, water, brash, floes, continuous])
+        boundaries = [-10,-2, 0.5, 1.5, 4.5, 6.5, 7.5]
+    else:
+        # Used for colorbar only. Need special treatment since ice code 
+        # -1 and 5,6 are in the same group, but not adjacent.
+        cmap = ListedColormap([no_data, water, brash, floes, continuous])
+        boundaries = [0,1,2,3,4,5]
+        
+    norm = BoundaryNorm(boundaries, cmap.N, clip=True)
+    
+    return (cmap, norm) 
+
+
 def icetype_colorbar(im = None, false_colors=False, label="", labelpad=0, **kwargs):
     """
     Creates sea ice type colorbar, with appropriate ticks and tick labels.
     **kwargs are passed to plt.colorbar()
     """    
     (cmap,norm) = icetype_cmap(false_colors)
-
+      
     ticks = [-6,-1,1,2,3,4,5,6,7]
     ticklabels = ['no data', '-1', '1', '2', '3', '4' ,'5', '6', '7']
+        
+    if im is None:
+        im = plt.cm.ScalarMappable(cmap=cmap, 
+                                   norm=norm)
+        
+    cbar = plt.colorbar(im, ticks=ticks, **kwargs)
+       
+    cbar.ax.set_yticklabels(ticklabels);  # vertically oriented colorbar
+    cbar.set_label(label, labelpad=labelpad)
+    
+    return cbar
+
+def icegroup_colorbar(im = None, label="", labelpad=0, **kwargs):
+    """
+    Creates grouped sea ice type colorbar, with appropriate ticks 
+    and tick labels. **kwargs are passed to plt.colorbar()
+    """    
+    (cmap,norm) = icegroup_cmap(for_plotting = False)
+
+    ticks = [0.5, 1.5, 2.5, 3.5, 4.5]
+    ticklabels = ['no data', 'open water', 'brash', 'floes', 'continuous ice']
     
     if im is None:
         im = plt.cm.ScalarMappable(cmap=cmap, 
@@ -127,7 +191,6 @@ def icetype_colorbar(im = None, false_colors=False, label="", labelpad=0, **kwar
     cbar.set_label(label, labelpad=labelpad)
     
     return cbar
-
 
 def subplot_time_grid(deployments, rows, cols, sharex="col", sharey=True, 
                       height_ratios = None, hspace=None, wspace=None, time="timestamp"):
