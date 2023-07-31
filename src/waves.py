@@ -139,8 +139,8 @@ def directional_moments2direction(a1,b1):
     """
     dominant_direction__rad = np.arctan2(b1,a1) # Note "role" reversal, the syntax is np.arctan2(y,x)   
     # Convert to nautic convention
-    dominant_direction = 90 - np.rad2deg(dominant_direction__rad)  
-    return misc.symmetric_wrap(dominant_direction, 360)
+    dominant_direction = -90 - np.rad2deg(dominant_direction__rad)  
+    return dominant_direction%360
 
 def peak_direction(a1,b1,energy):  
     """
@@ -173,7 +173,7 @@ def mean_direction(a1,b1,energy):
     a1_mean = nansum(energy * a1)/nansum(energy)
     b1_mean = nansum(energy * b1)/nansum(energy)
     mean_dir = directional_moments2direction(a1_mean,b1_mean)    
-    return misc.symmetric_wrap(mean_dir, 360)
+    return mean_dir%360
 
 
 def mean_directional_spread(a1,b1,energy):

@@ -3,6 +3,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from matplotlib.ticker import AutoLocator
+from functools import partial
 
 
 def distance_in_wave_direction(swift20, swift21):
@@ -59,11 +60,14 @@ def get_pointwise_attenuation(spectra, spectra_ref, frequency_range, distance):
     return ds
 
 
-def fit_alpha(alpha, a0, b0, b_constraint = None):
+def fit_alpha(alpha, a0, b0, b_constraint = None, b = None):
     """
     Non linear least squares to a power law 
-        alpha = a * b ^ freq
+        alpha = a * freq ^ b
     using scipy
+    
+    If b_constraint is given, b will be constrained to the given interval.
+    If b is given, this will be used in the power law, collapsing the fit to one parameter (a).
     """    
 
     # prepare data    
@@ -77,14 +81,28 @@ def fit_alpha(alpha, a0, b0, b_constraint = None):
     
     # Compute fit 
     if b_constraint:
+        f = _power_law
         kwargs = {'p0' : (a0, b0),
                   'bounds': ([-np.inf, b_constraint[0]], [np.inf, b_constraint[1]])}
     else:
+        f = _power_law
         kwargs = {'p0' : (a0, b0)}
+        
+    if b is not None:
+        f = partial(_power_law, b = b)
+        kwargs = {'p0' : (a0)}
+        
+    popt, pcov = curve_fit(f, xdata, ydata, **kwargs)
     
-    popt, pcov = curve_fit(_power_law, xdata, ydata, **kwargs)
+    # Compute RMSE
+    error = ydata - f(xdata, *popt)
+    rmse = np.sqrt(np.mean(error**2))
 
-    return (popt, pcov)
+    a = popt[0]  
+    if len(popt) > 1:
+        b = popt[1]
+        
+    return (a, b, rmse)
 
 def alpha_boxplot(alpha):
     """
@@ -126,13 +144,13 @@ def alpha_boxplot(alpha):
     return
 
 
-def plot_fit(popt, **kwargs):
+def plot_fit(a, b, **kwargs):
     """
     Plot fit from fit_alpha
     """    
     xlim = plt.gca().get_xlim()
     x = np.linspace(xlim[0],xlim[1],20)
-    y = _power_law(x, *popt)
+    y = _power_law(x, a, b)
     plt.plot(x,y*1e5, **kwargs)
         
     return
