@@ -1,7 +1,7 @@
 # Direct observations of wave-sea ice interactions in the Antarctic Marginal Ice Zone
 *Authors: S.Wahlgren, J. Thomson, L. Biddle, S. Swart*
 
-This is a repository for the data analysis performed in Wahlgren et al. (submitted to JGR:Oceans). Preprint DOI: [10.22541/essoar.168201718.84053333/v1](https://doi.org/10.22541/essoar.168201718.84053333/v1)  
+This is a repository for the data analysis performed in  Wahlgren, S., Thomson, J., Biddle, L. C., & Swart, S. (2023). Direct observations of wave-sea ice interactions in the Antarctic marginal ice zone. *Journal of Geophysical Research: Oceans*. https://doi.org/10.1029/2023JC019948  
 
 
 ## Summary
